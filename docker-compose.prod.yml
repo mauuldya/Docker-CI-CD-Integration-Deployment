@@ -1,0 +1,60 @@
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: sijago_app
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    ports:
+      - "8000:8000"  
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: production
+      APP_DEBUG: false
+      APP_KEY: base64:8LpKi2PtQ4nhCQr+u495ZRvfno7PjNrVnh0kyuoLTeE=
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: sijago
+      DB_USERNAME: sijago_user
+      DB_PASSWORD: secret
+      CACHE_DRIVER: redis
+      REDIS_HOST: redis
+
+  db:
+    image: postgres:13
+    container_name: sijago_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sijago
+      POSTGRES_USER: sijago_user
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - db-data-prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sijago_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: sijago_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"  # beda port juga biar aman
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data

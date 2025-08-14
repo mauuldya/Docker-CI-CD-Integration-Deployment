@@ -1,0 +1,63 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sijago_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: sijago
+      DB_USERNAME: sijago_user
+      DB_PASSWORD: secret
+      CACHE_DRIVER: redis
+      REDIS_HOST: redis
+    command: sh -c "
+      until pg_isready -h db -p 5432; do sleep 2; done;
+      php artisan migrate --force;
+      php artisan serve --host=0.0.0.0 --port=8000; "
+
+  db:
+    image: postgres:13
+    container_name: sijago_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sijago
+      POSTGRES_USER: sijago_user
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sijago_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: sijago_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
