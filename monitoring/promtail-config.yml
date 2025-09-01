@@ -1,0 +1,34 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Ambil log khusus dari container "sijago_stack_app"
+  - job_name: sijago
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+    relabel_configs:
+      # Ambil hanya container dengan nama sijago_stack_app
+      - source_labels: [__meta_docker_container_name]
+        regex: /sijago_stack_app.*
+        action: keep
+      # Path log
+      - source_labels: [__meta_docker_container_log_stream]
+        target_label: stream
+      - source_labels: [__meta_docker_container_name]
+        target_label: container
+
+  # Ambil semua log dari semua container Docker
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*-json.log

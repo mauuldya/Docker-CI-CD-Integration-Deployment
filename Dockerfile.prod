@@ -1,48 +1,37 @@
 FROM php:8.2-cli
 
-WORKDIR /var/www
+# Buat non-root user
+ARG USER=appuser
+ARG UID=1000
+RUN useradd -u $UID -m $USER
 
-# Install build dependencies & PHP extensions
-RUN apk add --no-cache \
-    bash \
-    git \
+# Install dependencies & PostgreSQL driver
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    postgresql-client \
     unzip \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
+    git \
     libzip-dev \
-    icu-dev \
-    zlib-dev \
-    postgresql-dev \
-    curl \
-    oniguruma-dev \
-    autoconf \
-    gcc \
-    g++ \
-    make \
-    pkgconfig \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_pgsql mbstring zip intl bcmath gd \
-    && rm -rf /var/cache/apk/*
+    libicu-dev \
+    && docker-php-ext-install pdo pdo_pgsql pgsql zip intl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copy project
-COPY . /var/www
+WORKDIR /var/www
 
-# Set permissions
-RUN mkdir -p storage bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache
+# Copy source code
+COPY . .
 
-# Install Laravel dependencies & optimasi
-RUN composer install --no-dev --optimize-autoloader
+# Change owner to non-root user
+RUN chown -R $USER:$USER /var/www
 
-# Cache Laravel
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+# Switch to non-root user
+USER $USER
+
+# Install Laravel dependencies
+RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
 EXPOSE 8000
-
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

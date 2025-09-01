@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  - job_name: 'sijago_app'
+    #metrics_path: /metrics
+    static_configs:
+      - targets: ['sijago_stack_app:8000']
+
+  # Scrape semua cadvisor (global mode di swarm)
+  - job_name: 'cadvisor'
+    dns_sd_configs:
+      - names:
+          - 'tasks.monitoring_stack_cadvisor'
+        type: A
+        port: 8080
+
+  # Scrape Loki (opsional, buat healthcheck)
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']

@@ -1,60 +1,96 @@
+version: "3.9"
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+
+volumes:
+  db-data:
+
+networks:
+  sijago_net:
+    driver: overlay
+  monitoring_net:
+    external: true   # pastikan monitoring stack network sudah dibuat sebelumnya
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-    container_name: sijago_app
-    working_dir: /var/www
-    volumes:
-      - .:/var/www
-    ports:
-      - "8000:8000"  
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      APP_ENV: production
-      APP_DEBUG: false
-      APP_KEY: base64:8LpKi2PtQ4nhCQr+u495ZRvfno7PjNrVnh0kyuoLTeE=
-      DB_CONNECTION: pgsql
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_DATABASE: sijago
-      DB_USERNAME: sijago_user
-      DB_PASSWORD: secret
-      CACHE_DRIVER: redis
-      REDIS_HOST: redis
-
   db:
     image: postgres:13
-    container_name: sijago_db
-    restart: unless-stopped
     environment:
       POSTGRES_DB: sijago
       POSTGRES_USER: sijago_user
-      POSTGRES_PASSWORD: secret
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     volumes:
-      - db-data-prod:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sijago_user"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    secrets:
+      - db_password
+    networks:
+      - sijago_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   redis:
     image: redis:7-alpine
-    container_name: sijago_redis
-    restart: unless-stopped
     ports:
-      - "6379:6379"  # beda port juga biar aman
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - sijago_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 256M
 
-volumes:
-  db-data
+  app:
+    image: sijago_app:prod   # build dulu: docker build -t sijago_app:prod -f Dockerfile.prod .
+    working_dir: /var/www
+    volumes:
+      - .:/var/www:cached
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: sijago
+      DB_USERNAME: sijago_user
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      CACHE_DRIVER: redis
+      REDIS_HOST: redis
+      PROMETHEUS_URL: http://prometheus:9090
+      CADVISOR_URL: http://cadvisor:8080
+      GRAFANA_URL: http://grafana:3000
+    secrets:
+      - db_password
+    networks:
+      - sijago_net
+      - monitoring_net
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
