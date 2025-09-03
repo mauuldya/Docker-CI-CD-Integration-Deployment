@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo "🔄 Checkout source code dari GitHub..."
-                git branch: 'main',
+                git branch: 'syifa',
                     url: 'https://github.com/mauuldya/Docker-CI-CD-Integration-Deployment.git',
                     credentialsId: 'jenkins-tokens-github'
             }
