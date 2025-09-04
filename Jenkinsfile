@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Nama image yang akan dipush ke DockerHub (ganti dengan username repo kamu di DockerHub)
         DOCKER_IMAGE = "syifamaulidya/docker-ci-cd-integration-deployment"
         DOCKER_TAG   = "latest"
     }
@@ -20,19 +19,21 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "🐳 Build Docker image..."
-                sh 'docker build -t $DOCKER_IMAGE:$DOCKER_TAG .'
+                sh 'docker build --no-cache -t $DOCKER_IMAGE:$DOCKER_TAG .'
             }
         }
 
         stage('Run Tests') {
             steps {
                 echo "🧪 Menjalankan tests..."
-                // ganti dengan perintah test beneran kalau ada
                 sh 'echo "Running tests (dummy step for now)"'
             }
         }
 
         stage('Push to DockerHub') {
+            when {
+                branch 'main'
+            }
             steps {
                 echo "📤 Push image ke DockerHub..."
                 withCredentials([usernamePassword(
@@ -43,6 +44,12 @@ pipeline {
                     sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
                     sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
                 }
+            }
+        }
+
+        stage('Clean Up') {
+            steps {
+                sh 'docker rmi $DOCKER_IMAGE:$DOCKER_TAG || true'
             }
         }
     }
