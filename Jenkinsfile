@@ -32,7 +32,7 @@ pipeline {
 
         stage('Push to DockerHub') {
             when {
-                branch 'main'
+                branch 'syifa'
             }
             steps {
                 echo "📤 Push image ke DockerHub..."
