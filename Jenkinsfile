@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "syifamaulidya/docker-ci-cd-integration-deployment"
-        DOCKER_TAG   = "latest"
+        DOCKER_TAG   = "${BUILD_NUMBER}" // tag unik per build
     }
 
     stages {
@@ -13,6 +13,13 @@ pipeline {
                 git branch: 'syifa',
                     url: 'https://github.com/mauuldya/Docker-CI-CD-Integration-Deployment.git',
                     credentialsId: 'jenkins-tokens-github'
+            }
+        }
+
+        stage('Clean Old Image') {
+            steps {
+                echo "🧹 Hapus image lama jika ada..."
+                sh 'docker rmi $DOCKER_IMAGE:$DOCKER_TAG || true'
             }
         }
 
@@ -44,12 +51,6 @@ pipeline {
                     sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
                     sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
                 }
-            }
-        }
-
-        stage('Clean Up') {
-            steps {
-                sh 'docker rmi $DOCKER_IMAGE:$DOCKER_TAG || true'
             }
         }
     }
