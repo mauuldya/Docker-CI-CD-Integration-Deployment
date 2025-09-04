@@ -4,14 +4,18 @@ FROM jenkins/jenkins:lts
 # Switch ke root buat install dependencies
 USER root
 
-# Install Docker CLI (agar Jenkins bisa build docker image)
+# Install Docker CLI
 RUN apt-get update && \
-    apt-get install -y docker.io && \
+    apt-get install -y docker.io curl && \
     apt-get clean
 
-# Install Docker Compose (opsional, kalau butuh docker-compose di pipeline)
+# Install Docker Compose (opsional)
 RUN curl -L "https://github.com/docker/compose/releases/download/v2.22.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
 
-# Kembali ke user jenkins
+# Samakan GID docker group di container dengan host (1001)
+RUN groupmod -g 1001 docker || groupadd -g 1001 docker && \
+    usermod -aG docker jenkins
+
+# Balik ke user jenkins (lebih aman daripada root)
 USER jenkins
