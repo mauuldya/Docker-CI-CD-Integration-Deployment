@@ -4,18 +4,24 @@ FROM jenkins/jenkins:lts
 # Switch ke root buat install dependencies
 USER root
 
-# Install Docker CLI
+# Install Docker CLI & tools
 RUN apt-get update && \
     apt-get install -y docker.io curl && \
     apt-get clean
 
-# Install Docker Compose (opsional)
-RUN curl -L "https://github.com/docker/compose/releases/download/v2.22.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
+# Install Docker Compose
+RUN curl -L "https://github.com/docker/compose/releases/download/v2.22.2/docker-compose-$(uname -s)-$(uname -m)" \
+    -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
 
-# Samakan GID docker group di container dengan host (1001)
-RUN groupmod -g 1001 docker || groupadd -g 1001 docker && \
+# Samakan GID docker group di container dengan host
+ARG DOCKER_GID=1001 
+RUN if getent group docker; then \
+      groupmod -g ${DOCKER_GID} docker; \
+    else \
+      groupadd -g ${DOCKER_GID} docker; \
+    fi && \
     usermod -aG docker jenkins
 
-# Balik ke user jenkins (lebih aman daripada root)
+# Balik ke user jenkins (lebih aman)
 USER jenkins
