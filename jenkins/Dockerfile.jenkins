@@ -4,9 +4,9 @@ FROM jenkins/jenkins:lts
 # Switch ke root buat install dependencies
 USER root
 
-# Install Docker CLI & tools
+# Install Docker CLI & tools + PHP + Git + Unzip (buat Composer & Laravel)
 RUN apt-get update && \
-    apt-get install -y docker.io curl && \
+    apt-get install -y docker.io curl php-cli unzip git && \
     apt-get clean
 
 # Install Docker Compose
@@ -14,8 +14,11 @@ RUN curl -L "https://github.com/docker/compose/releases/download/v2.22.2/docker-
     -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
 
+# Install Composer (untuk Laravel dependencies)
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 # Samakan GID docker group di container dengan host
-ARG DOCKER_GID=1001 
+ARG DOCKER_GID=1001
 RUN if getent group docker; then \
       groupmod -g ${DOCKER_GID} docker; \
     else \
