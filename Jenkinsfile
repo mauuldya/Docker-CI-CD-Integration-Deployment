@@ -23,13 +23,6 @@ pipeline {
             }
         }
 
-        stage('Prepare Laravel') {
-            steps {
-                echo "🔑 Generate Laravel APP_KEY..."
-                sh 'php artisan key:generate --force'
-            }
-        }
-
         stage('Clean Old Image') {
             steps {
                 echo "🧹 Hapus image lama jika ada..."
