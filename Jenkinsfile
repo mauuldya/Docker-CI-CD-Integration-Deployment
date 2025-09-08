@@ -16,6 +16,13 @@ pipeline {
             }
         }
 
+        stage('Install Dependencies') {
+            steps {
+                echo "📦 Install dependencies dengan Composer..."
+                sh 'composer install --no-interaction --prefer-dist --optimize-autoloader'
+            }
+        }
+
         stage('Clean Old Image') {
             steps {
                 echo "🧹 Hapus image lama jika ada..."
@@ -32,8 +39,8 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                echo "🧪 Menjalankan tests..."
-                sh 'echo "Running tests (dummy step for now)"'
+                echo "🧪 Menjalankan Laravel tests..."
+                sh 'php artisan test --env=testing'
             }
         }
 
