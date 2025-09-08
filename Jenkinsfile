@@ -33,7 +33,8 @@ pipeline {
         stage('Run Tests') {
             steps {
                 echo "🧪 Menjalankan tests..."
-                sh 'echo "Running tests (dummy step for now)"'
+                sh 'composer install --no-interaction --prefer-dist'
+                sh 'php artisan test'
             }
         }
 
