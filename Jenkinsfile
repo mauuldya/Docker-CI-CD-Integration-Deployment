@@ -21,18 +21,23 @@ pipeline {
 
         stage('Clean Old Image') {
             steps {
-                sh 'docker rmi $DOCKER_IMAGE:$DOCKER_TAG || true'
+                sh """
+                  docker stop sijago-dev || true
+                  docker rm sijago-dev || true
+                  docker rmi -f $DOCKER_IMAGE:$DOCKER_TAG || true
+                """
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build --no-cache -t $DOCKER_IMAGE:$DOCKER_TAG .'
+                sh 'docker build --pull --no-cache --force-rm -t $DOCKER_IMAGE:$DOCKER_TAG .'
             }
         }
 
         stage('Run Tests') {
             steps {
+                // kalau gagal -> pipeline tetap lanjut
                 sh 'docker run --rm $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing || true'
             }
         }
@@ -64,7 +69,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline sukses! Aplikasi berhasil di-deploy ke DEV environment.'
+            echo '✅ Pipeline sukses! Aplikasi berhasil di-deploy ke DEV environment (port 9100).'
         }
         failure {
             echo '❌ Pipeline gagal! Cek stage yang error.'
