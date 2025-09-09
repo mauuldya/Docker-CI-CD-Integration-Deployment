@@ -19,23 +19,19 @@ pipeline {
             }
         }
 
-        stage('Clean Old Image') {
+        stage('Clean Old Container & Image') {
             steps {
                 sh """
                   docker stop sijago-dev || true
                   docker rm sijago-dev || true
                   docker rmi -f $DOCKER_IMAGE:$DOCKER_TAG || true
-                  docker system prune -af || true
                 """
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                  docker build --pull --no-cache --force-rm -t $DOCKER_IMAGE:$DOCKER_TAG .
-                  docker image inspect $DOCKER_IMAGE:$DOCKER_TAG
-                '''
+                sh 'docker build --pull --no-cache --force-rm -t $DOCKER_IMAGE:$DOCKER_TAG .'
             }
         }
 
@@ -58,12 +54,8 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
-                      echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                      for i in {1..3}; do
-                        docker push $DOCKER_IMAGE:$DOCKER_TAG && break || sleep 10
-                      done
-                    '''
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+                    sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
                 }
             }
         }
