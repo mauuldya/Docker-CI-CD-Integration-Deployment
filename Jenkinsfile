@@ -3,53 +3,42 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "syifamaulidya/docker-ci-cd-integration-deployment"
-        DOCKER_TAG   = "${BUILD_NUMBER}" // tag unik per build
+        DOCKER_TAG   = "dev"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo "🔄 Checkout source code dari GitHub..."
-                git branch: 'syifa',
-                    url: 'https://github.com/mauuldya/Docker-CI-CD-Integration-Deployment.git',
-                    credentialsId: 'jenkins-tokens-github'
+                checkout scm
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                echo "📦 Install dependencies dengan Composer..."
                 sh 'composer install --no-interaction --prefer-dist --optimize-autoloader'
             }
         }
 
         stage('Clean Old Image') {
             steps {
-                echo "🧹 Hapus image lama jika ada..."
                 sh 'docker rmi $DOCKER_IMAGE:$DOCKER_TAG || true'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "🐳 Build Docker image..."
                 sh 'docker build --no-cache -t $DOCKER_IMAGE:$DOCKER_TAG .'
             }
         }
 
         stage('Run Tests') {
             steps {
-                echo "🧪 Menjalankan Laravel tests (allow fail)..."
-                sh 'php artisan test --env=testing || true'
+                sh 'docker run --rm $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing || true'
             }
         }
 
         stage('Push to DockerHub') {
-            when {
-                branch 'syifa'
-            }
             steps {
-                echo "📤 Push image ke DockerHub..."
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER',
@@ -60,14 +49,16 @@ pipeline {
                 }
             }
         }
-    }
 
-    post {
-        success {
-            echo "✅ Pipeline sukses! Image sudah dipush ke DockerHub: $DOCKER_IMAGE:$DOCKER_TAG"
-        }
-        failure {
-            echo "❌ Pipeline gagal. Cek log error di atas."
+        stage('Deploy') {
+            steps {
+                sh """
+                  docker pull $DOCKER_IMAGE:$DOCKER_TAG
+                  docker stop sijago-dev || true
+                  docker rm sijago-dev || true
+                  docker run -d --name myapp-dev -p 8080:8000 $DOCKER_IMAGE:$DOCKER_TAG
+                """
+            }
         }
     }
 }
