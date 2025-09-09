@@ -71,7 +71,6 @@ pipeline {
                       docker run -d --name sijago-dev -p 9100:8000 \
                         -e APP_KEY=$APP_KEY \
                         $DOCKER_IMAGE:dev
-                        php artisan serve --host=0.0.0.0 --port=8000
                     """
                 }
             }
