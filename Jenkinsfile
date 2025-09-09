@@ -37,8 +37,13 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                // kalau gagal -> pipeline tetap lanjut
-                sh 'docker run --rm $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing || true'
+                withCredentials([string(credentialsId: 'laravel-app-key', variable: 'APP_KEY')]) {
+                    sh '''
+                      docker run --rm \
+                        -e APP_KEY=$APP_KEY \
+                        $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing || true
+                    '''
+                }
             }
         }
 
@@ -57,12 +62,16 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh """
-                  docker pull $DOCKER_IMAGE:$DOCKER_TAG
-                  docker stop sijago-dev || true
-                  docker rm sijago-dev || true
-                  docker run -d --name sijago-dev -p 9100:8000 $DOCKER_IMAGE:$DOCKER_TAG
-                """
+                withCredentials([string(credentialsId: 'laravel-app-key', variable: 'APP_KEY')]) {
+                    sh """
+                      docker pull $DOCKER_IMAGE:$DOCKER_TAG
+                      docker stop sijago-dev || true
+                      docker rm sijago-dev || true
+                      docker run -d --name sijago-dev -p 9100:8000 \
+                        -e APP_KEY=$APP_KEY \
+                        $DOCKER_IMAGE:$DOCKER_TAG
+                    """
+                }
             }
         }
     }
