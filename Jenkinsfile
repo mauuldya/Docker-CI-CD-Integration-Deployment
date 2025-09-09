@@ -33,7 +33,7 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'docker run --rm $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing || true'
+                sh 'docker run --rm $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing'
             }
         }
 
@@ -56,9 +56,21 @@ pipeline {
                   docker pull $DOCKER_IMAGE:$DOCKER_TAG
                   docker stop sijago-dev || true
                   docker rm sijago-dev || true
-                  docker run -d --name myapp-dev -p 8080:8000 $DOCKER_IMAGE:$DOCKER_TAG
+                  docker run -d --name sijago-dev -p 9100:8000 $DOCKER_IMAGE:$DOCKER_TAG
                 """
             }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline sukses! Aplikasi berhasil di-deploy ke DEV environment.'
+        }
+        failure {
+            echo '❌ Pipeline gagal! Cek stage yang error.'
+        }
+        always {
+            echo 'ℹ️ Pipeline selesai dieksekusi.'
         }
     }
 }
