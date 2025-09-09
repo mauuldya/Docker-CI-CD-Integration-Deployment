@@ -24,9 +24,6 @@ WORKDIR /var/www
 # Copy source code
 COPY . .
 
-# Copy .env.example jadi .env
-COPY .env.example .env
-
 # Change owner to non-root user
 RUN chown -R $USER:$USER /var/www
 
