@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "syifamaulidya/docker-ci-cd-integration-deployment"
-        DOCKER_TAG   = "dev"
+        DOCKER_TAG   = "${env.BUILD_NUMBER}"   // tag unik per build
     }
 
     stages {
@@ -24,14 +24,14 @@ pipeline {
                 sh """
                   docker stop sijago-dev || true
                   docker rm sijago-dev || true
-                  docker rmi -f $DOCKER_IMAGE:$DOCKER_TAG || true
                 """
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build --pull --no-cache --force-rm -t $DOCKER_IMAGE:$DOCKER_TAG .'
+                sh 'docker build --no-cache --pull -t $DOCKER_IMAGE:$DOCKER_TAG .'
+                sh 'docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:dev'
             }
         }
 
@@ -56,6 +56,7 @@ pipeline {
                 )]) {
                     sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
                     sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
+                    sh 'docker push $DOCKER_IMAGE:dev'
                 }
             }
         }
@@ -64,12 +65,12 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'laravel-app-key', variable: 'APP_KEY')]) {
                     sh """
-                      docker pull $DOCKER_IMAGE:$DOCKER_TAG
+                      docker pull $DOCKER_IMAGE:dev
                       docker stop sijago-dev || true
                       docker rm sijago-dev || true
                       docker run -d --name sijago-dev -p 9100:8000 \
                         -e APP_KEY=$APP_KEY \
-                        $DOCKER_IMAGE:$DOCKER_TAG
+                        $DOCKER_IMAGE:dev
                     """
                 }
             }
