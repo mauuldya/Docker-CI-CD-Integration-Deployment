@@ -55,10 +55,6 @@ pipeline {
         stage('Deploy to Swarm') {
             steps {
                 script {
-                    // buat secret kalau belum ada
-                    sh '''
-                      echo "secret_password" | docker secret create db_password - 2>/dev/null || true
-                    '''
                     // deploy stack
                     sh '''
                       docker stack deploy -c docker-compose.prod.yml $STACK_NAME

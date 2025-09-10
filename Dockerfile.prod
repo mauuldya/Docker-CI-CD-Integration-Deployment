@@ -21,8 +21,9 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copy source code
+# Copy semua kecuali .env
 COPY . .
+RUN rm -f .env
 
 # Change owner to non-root user
 RUN chown -R $USER:$USER /var/www
