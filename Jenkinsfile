@@ -31,8 +31,12 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
+                  if [ ! -f .appkey ]; then
+                    php artisan key:generate --show > .appkey
+                  fi
+                  APP_KEY=$(cat .appkey)
                   docker run --rm \
-                    -e APP_KEY=$(php artisan key:generate --show) \
+                    -e APP_KEY=$APP_KEY \
                     $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing || true
                 '''
             }
@@ -55,9 +59,9 @@ pipeline {
         stage('Deploy to Swarm') {
             steps {
                 script {
-                    // deploy stack
                     sh '''
-                      docker stack deploy -c docker-compose.prod.yml $STACK_NAME
+                      export APP_KEY=$(cat .appkey)
+                      APP_KEY=$APP_KEY docker stack deploy -c docker-compose.prod.yml $STACK_NAME
                     '''
                 }
             }
