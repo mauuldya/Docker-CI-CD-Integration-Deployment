@@ -36,9 +36,8 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 8000
 
 # Gunakan entrypoint untuk jalankan Laravel
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["bash", "/usr/local/bin/docker-entrypoint.sh"]
