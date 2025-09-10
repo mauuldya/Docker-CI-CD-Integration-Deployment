@@ -59,7 +59,7 @@ services:
           memory: 256M
 
   app:
-    image: syifamaulidya/docker-ci-cd-integration-deployment:latest   # <- pakai image dari Jenkins push
+    image: syifamaulidya/sijago-app:latest   # <- pakai image dari Jenkins push
     working_dir: /var/www
     ports:
       - "8001:8000"
