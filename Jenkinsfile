@@ -75,8 +75,10 @@ pipeline {
                 echo "Deploying ${IMAGE_TAG} to Development environment (docker swarm) ..."
                 dir ("${WORKSPACE}") {
                     sh '''
+                      export DB_PASSWORD=$(cat secrets/db_password.txt)
                       export APP_KEY=$(cat .appkey)
-                      APP_KEY=$APP_KEY docker stack deploy -c docker-compose.prod.yml sijago_stack_dev
+                      export DB_PASSWORD=$(cat secrets/db_password.txt)
+                      APP_KEY=$APP_KEY DB_PASSWORD=$DB_PASSWORD docker stack deploy -c docker-compose.prod.yml sijago_stack_dev
                       docker stack services sijago_stack_dev
                     '''
                 }

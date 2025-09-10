@@ -72,7 +72,7 @@ services:
       DB_PORT: 5432
       DB_DATABASE: sijago
       DB_USERNAME: sijago_user
-      DB_PASSWORD_FILE: secret
+      DB_PASSWORD: secret
       CACHE_DRIVER: redis
       REDIS_HOST: redis
       PROMETHEUS_URL: http://prometheus:9090
