@@ -34,7 +34,11 @@ USER $USER
 # Install Laravel dependencies
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 8000
-CMD bash -c "export APP_KEY=\$(cat /run/secrets/app_key) && \
-             export DB_PASSWORD=\$(cat /run/secrets/db_password) && \
-             php artisan serve --host=0.0.0.0 --port=8000"
+
+# Gunakan entrypoint untuk jalankan Laravel
+ENTRYPOINT ["docker-entrypoint.sh"]
