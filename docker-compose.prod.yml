@@ -62,7 +62,7 @@ services:
     image: syifamaulidya/docker-ci-cd-integration-deployment:latest   # <- pakai image dari Jenkins push
     working_dir: /var/www
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
