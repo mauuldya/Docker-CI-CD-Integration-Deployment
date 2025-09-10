@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY     = "docker.io/syifamaulidya"
-        IMAGE_NAME   = "sijago-app"   // tag unik per build
+        REGISTRY   = "docker.io/syifamaulidya"
+        IMAGE_NAME = "sijago-app"
     }
 
     stages {
@@ -20,34 +20,36 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            when { branch 'dev'}
+            when { branch 'dev' }
             steps {
                 script {
-                    // build image memakai Docker pipeline DSL
-                    def builtImage = docker.build("${REGISTRY}/${IMAGE_NAME}:${BUILLD_NUMBER}")
+                    // build image
+                    docker.build("${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}")
 
-                    // simpan nama image ke environment variable
+                    // set environment variable
                     env.IMAGE_TAG = "${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
+                    env.IMAGE_LATEST = "${REGISTRY}/${IMAGE_NAME}:latest"
 
-                    // tambahkan deskripsi build Jenkins UI
+                    // simpan deskripsi build
                     currentBuild.description = env.IMAGE_TAG
                 }
             }
         }
 
         stage('Run Tests') {
-            when { branch 'dev'}
+            when { branch 'dev' }
             steps {
                 script {
-                sh '''
-                  if [ ! -f .appkey ]; then
-                    php artisan key:generate --show > .appkey
-                  fi
-                  APP_KEY=$(cat .appkey)
-                  docker run --rm \
-                    -e APP_KEY=$APP_KEY \
-                    $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing || true
-                '''
+                    sh '''
+                      if [ ! -f .appkey ]; then
+                        php artisan key:generate --show > .appkey
+                      fi
+                      APP_KEY=$(cat .appkey)
+                      docker run --rm \
+                        -e APP_KEY=$APP_KEY \
+                        $IMAGE_TAG php artisan test --env=testing || true
+                    '''
+                }
             }
         }
 
@@ -60,22 +62,23 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-                    sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
-                    sh 'docker push $DOCKER_IMAGE:latest'
+                    sh 'docker push $IMAGE_TAG'
+                    sh 'docker tag $IMAGE_TAG $IMAGE_LATEST'
+                    sh 'docker push $IMAGE_LATEST'
                 }
             }
         }
 
         stage('Deploy to Staging') {
-            when { branch 'dev'}
+            when { branch 'dev' }
             steps {
-                echo "Deploying ${IMAGE_NAME} to Development environment (docker swarm) ..."
+                echo "Deploying ${IMAGE_TAG} to Development environment (docker swarm) ..."
                 dir ("${WORKSPACE}") {
                     sh '''
                       export APP_KEY=$(cat .appkey)
                       APP_KEY=$APP_KEY docker stack deploy -c docker-compose.prod.yml sijago_stack_dev
                       docker stack services sijago_stack_dev
-                       '''
+                    '''
                 }
             }
         }
