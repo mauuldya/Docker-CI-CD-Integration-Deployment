@@ -23,8 +23,11 @@ pipeline {
             when { branch 'dev' }
             steps {
                 script {
-                    // build image
-                    docker.build("${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}")
+                    // build image pakai Dockerfile.prod
+                    docker.build(
+                    "${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}",
+                    "-f Dockerfile.prod ."
+                    )
 
                     // set environment variable
                     env.IMAGE_TAG = "${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
