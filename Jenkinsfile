@@ -38,8 +38,8 @@ pipeline {
                 }
             }
         }
-
-        stage('Run Tests') {
+        
+        stage('Run Tests and Generate App Key Secret') {
             when { branch 'dev' }
             steps {
                 script {
@@ -47,9 +47,8 @@ pipeline {
                       if [ ! -f .appkey ]; then
                         php artisan key:generate --show > .appkey
                       fi
-                      APP_KEY=$(cat .appkey)
-                      docker run --rm \
-                        -e APP_KEY=$APP_KEY \
+                      docker secret rm app_key || true
+                        cat .appkey | docker secret create app_key -
                         $IMAGE_TAG php artisan test --env=testing || true
                     '''
                 }
@@ -75,13 +74,9 @@ pipeline {
         stage('Deploy to Staging') {
             when { branch 'dev' }
             steps {
-                echo "Deploying ${IMAGE_TAG} to Development environment (docker swarm) ..."
                 dir ("${WORKSPACE}") {
                     sh '''
-                      export DB_PASSWORD=$(cat secrets/db_password.txt)
-                      export APP_KEY=$(cat .appkey)
-                      export DB_PASSWORD=$(cat secrets/db_password.txt)
-                      APP_KEY=$APP_KEY DB_PASSWORD=$DB_PASSWORD docker stack deploy -c docker-compose.prod.yml sijago_stack_dev
+                      docker stack deploy -c docker-compose.prod.yml sijago_stack_dev
                       docker stack services sijago_stack_dev
                     '''
                 }

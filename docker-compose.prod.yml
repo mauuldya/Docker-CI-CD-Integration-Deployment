@@ -3,6 +3,8 @@ version: "3.9"
 secrets:
   db_password:
     file: ./secrets/db_password.txt
+  app_key:
+    external: true 
 
 volumes:
   db-data:
@@ -65,14 +67,14 @@ services:
       - "8001:8000"
     environment:
       APP_ENV: production
-      APP_DEBUG: "false"
-      APP_KEY: ${APP_KEY}
+      APP_DEBUG: "true"
+      APP_KEY: /run/secrets/app_key
       DB_CONNECTION: pgsql
       DB_HOST: db
       DB_PORT: 5432
       DB_DATABASE: sijago
       DB_USERNAME: sijago_user
-      DB_PASSWORD: secret
+      DB_PASSWORD_FILE: /run/secrets/db_password
       CACHE_DRIVER: redis
       REDIS_HOST: redis
       PROMETHEUS_URL: http://prometheus:9090
@@ -80,6 +82,7 @@ services:
       GRAFANA_URL: http://grafana:3000
     secrets:
       - db_password
+      - app_key
     networks:
       - sijago_net
       - monitoring_net
