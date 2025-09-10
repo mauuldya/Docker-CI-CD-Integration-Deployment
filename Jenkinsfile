@@ -2,10 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "syifamaulidya/docker-ci-cd-integration-deployment"
-        DOCKER_TAG   = "${env.BUILD_NUMBER}"   // tag unik per build
-        DOCKER_FILE  = "Dockerfile.prod"       // pakai Dockerfile.prod
-        STACK_NAME   = "sijago"                // nama stack swarm
+        REGISTRY     = "docker.io/syifamaulidya"
+        IMAGE_NAME   = "sijago-app"   // tag unik per build
     }
 
     stages {
@@ -22,14 +20,25 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            when { branch 'dev'}
             steps {
-                sh 'docker build -f $DOCKER_FILE -t $DOCKER_IMAGE:$DOCKER_TAG .'
-                sh 'docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:latest'
+                script {
+                    // build image memakai Docker pipeline DSL
+                    def builtImage = docker.build("${REGISTRY}/${IMAGE_NAME}:${BUILLD_NUMBER}")
+
+                    // simpan nama image ke environment variable
+                    env.IMAGE_TAG = "${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
+
+                    // tambahkan deskripsi build Jenkins UI
+                    currentBuild.description = env.IMAGE_TAG
+                }
             }
         }
 
         stage('Run Tests') {
+            when { branch 'dev'}
             steps {
+                script {
                 sh '''
                   if [ ! -f .appkey ]; then
                     php artisan key:generate --show > .appkey
@@ -43,6 +52,7 @@ pipeline {
         }
 
         stage('Push to DockerHub') {
+            when { branch 'dev' }
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
@@ -56,13 +66,16 @@ pipeline {
             }
         }
 
-        stage('Deploy to Swarm') {
+        stage('Deploy to Staging') {
+            when { branch 'dev'}
             steps {
-                script {
+                echo "Deploying ${IMAGE_NAME} to Development environment (docker swarm) ..."
+                dir ("${WORKSPACE}") {
                     sh '''
                       export APP_KEY=$(cat .appkey)
-                      APP_KEY=$APP_KEY docker stack deploy -c docker-compose.prod.yml $STACK_NAME
-                    '''
+                      APP_KEY=$APP_KEY docker stack deploy -c docker-compose.prod.yml sijago_stack_dev
+                      docker stack services sijago_stack_dev
+                       '''
                 }
             }
         }
