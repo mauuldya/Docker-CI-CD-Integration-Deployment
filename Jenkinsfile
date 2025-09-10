@@ -71,6 +71,7 @@ pipeline {
                       docker rm sijago-dev || true
                       docker run -d --name sijago-dev -p 8001:8000 \
                         -e APP_KEY=$APP_KEY \
+                        -e APP_DEBUG=true \
                         $DOCKER_IMAGE:dev
                     """
                 }
