@@ -4,6 +4,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = "syifamaulidya/docker-ci-cd-integration-deployment"
         DOCKER_TAG   = "${env.BUILD_NUMBER}"   // tag unik per build
+        DOCKER_FILE  = "Dockerfile.prod"       // pakai Dockerfile.prod
     }
 
     stages {
@@ -30,7 +31,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build --no-cache --pull -t $DOCKER_IMAGE:$DOCKER_TAG .'
+                sh 'docker build --no-cache --pull -f $DOCKER_FILE -t $DOCKER_IMAGE:$DOCKER_TAG .'
                 sh 'docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:dev'
             }
         }
@@ -68,7 +69,7 @@ pipeline {
                       docker pull $DOCKER_IMAGE:dev
                       docker stop sijago-dev || true
                       docker rm sijago-dev || true
-                      docker run -d --name sijago-dev -p 9100:8000 \
+                      docker run -d --name sijago-dev -p 8001:8000 \
                         -e APP_KEY=$APP_KEY \
                         $DOCKER_IMAGE:dev
                     """
