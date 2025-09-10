@@ -63,30 +63,19 @@ pipeline {
         }
 
         stage('Deploy') {
-    steps {
-        withCredentials([string(credentialsId: 'laravel-app-key', variable: 'APP_KEY')]) {
-            sh """
-              docker pull $DOCKER_IMAGE:dev
-              docker stop sijago-dev || true
-              docker rm sijago-dev || true
-              docker run -d --name sijago-dev \
-                --network sijago_net \
-                -p 8001:8000 \
-                -e APP_KEY=$APP_KEY \
-                -e APP_ENV=production \
-                -e APP_DEBUG=false \
-                -e DB_CONNECTION=pgsql \
-                -e DB_HOST=db \
-                -e DB_PORT=5432 \
-                -e DB_DATABASE=sijago \
-                -e DB_USERNAME=sijago_user \
-                -e DB_PASSWORD=secret \
-                $DOCKER_IMAGE:dev
-            """
+            steps {
+                withCredentials([string(credentialsId: 'laravel-app-key', variable: 'APP_KEY')]) {
+                    sh """
+                      docker pull $DOCKER_IMAGE:dev
+                      docker stop sijago-dev || true
+                      docker rm sijago-dev || true
+                      docker run -d --name sijago-dev -p 8001:8000 \
+                        -e APP_KEY=$APP_KEY \
+                        $DOCKER_IMAGE:dev
+                    """
+                }
             }
-         }
-    }
-
+        }
     }
 
     post {
