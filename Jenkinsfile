@@ -42,7 +42,7 @@ pipeline {
                     sh '''
                       docker run --rm \
                         -e APP_KEY=$APP_KEY \
-                        $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing || true
+                        $DOCKER_IMAGE:$DOCKER_TAG ./vendor/bin/phpunit --configuration phpunit.xml || true
                     '''
                 }
             }
@@ -69,9 +69,21 @@ pipeline {
                       docker pull $DOCKER_IMAGE:dev
                       docker stop sijago-dev || true
                       docker rm sijago-dev || true
+
+                      # Jalankan container baru
                       docker run -d --name sijago-dev -p 8001:8000 \
                         -e APP_KEY=$APP_KEY \
                         $DOCKER_IMAGE:dev
+
+                      # Tunggu container up sebentar
+                      sleep 5
+
+                      # Clear cache & fix permission
+                      docker exec sijago-dev php artisan optimize:clear || true
+                      docker exec sijago-dev chmod -R 777 storage bootstrap/cache || true
+
+                      # Debug: cek apakah APP_KEY benar kepasang
+                      docker exec sijago-dev printenv | grep APP_KEY || true
                     """
                 }
             }
@@ -80,7 +92,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline sukses! Aplikasi berhasil di-deploy ke DEV environment (port 9100).'
+            echo '✅ Pipeline sukses! Aplikasi berhasil di-deploy ke DEV environment (port 8001).'
         }
         failure {
             echo '❌ Pipeline gagal! Cek stage yang error.'
