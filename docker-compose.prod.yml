@@ -59,10 +59,8 @@ services:
           memory: 256M
 
   app:
-    image: sijago_app:prod   # build dulu: docker build -t sijago_app:prod -f Dockerfile.prod .
+    image: syifamaulidya/docker-ci-cd-integration-deployment:latest
     working_dir: /var/www
-    volumes:
-      - .:/var/www:cached
     ports:
       - "8000:8000"
     environment:

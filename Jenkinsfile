@@ -5,6 +5,7 @@ pipeline {
         DOCKER_IMAGE = "syifamaulidya/docker-ci-cd-integration-deployment"
         DOCKER_TAG   = "${env.BUILD_NUMBER}"   // tag unik per build
         DOCKER_FILE  = "Dockerfile.prod"       // pakai Dockerfile.prod
+        STACK_NAME   = "sijago"                // nama stack swarm
     }
 
     stages {
@@ -20,31 +21,20 @@ pipeline {
             }
         }
 
-        stage('Clean Old Container & Image') {
-            steps {
-                sh """
-                  docker stop sijago-dev || true
-                  docker rm sijago-dev || true
-                """
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                sh 'docker build --no-cache --pull -f $DOCKER_FILE -t $DOCKER_IMAGE:$DOCKER_TAG .'
-                sh 'docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:dev'
+                sh 'docker build -f $DOCKER_FILE -t $DOCKER_IMAGE:$DOCKER_TAG .'
+                sh 'docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:latest'
             }
         }
 
         stage('Run Tests') {
             steps {
-                withCredentials([string(credentialsId: 'laravel-app-key', variable: 'APP_KEY')]) {
-                    sh '''
-                      docker run --rm \
-                        -e APP_KEY=$APP_KEY \
-                        $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing || true
-                    '''
-                }
+                sh '''
+                  docker run --rm \
+                    -e APP_KEY=$(php artisan key:generate --show) \
+                    $DOCKER_IMAGE:$DOCKER_TAG php artisan test --env=testing || true
+                '''
             }
         }
 
@@ -57,23 +47,22 @@ pipeline {
                 )]) {
                     sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
                     sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
-                    sh 'docker push $DOCKER_IMAGE:dev'
+                    sh 'docker push $DOCKER_IMAGE:latest'
                 }
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Swarm') {
             steps {
-                withCredentials([string(credentialsId: 'laravel-app-key', variable: 'APP_KEY')]) {
-                    sh """
-                      docker pull $DOCKER_IMAGE:dev
-                      docker stop sijago-dev || true
-                      docker rm sijago-dev || true
-                      docker run -d --name sijago-dev -p 8001:8000 \
-                        -e APP_KEY=$APP_KEY \
-                        -e APP_DEBUG=true \
-                        $DOCKER_IMAGE:dev
-                    """
+                script {
+                    // buat secret kalau belum ada
+                    sh '''
+                      echo "secret_password" | docker secret create db_password - 2>/dev/null || true
+                    '''
+                    // deploy stack
+                    sh '''
+                      docker stack deploy -c docker-compose.prod.yml $STACK_NAME
+                    '''
                 }
             }
         }
@@ -81,7 +70,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline sukses! Aplikasi berhasil di-deploy ke DEV environment (port 9100).'
+            echo '✅ Pipeline sukses! Stack berhasil di-deploy ke Swarm.'
         }
         failure {
             echo '❌ Pipeline gagal! Cek stage yang error.'
