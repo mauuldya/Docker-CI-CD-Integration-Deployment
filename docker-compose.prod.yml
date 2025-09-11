@@ -21,7 +21,7 @@ services:
     environment:
       POSTGRES_DB: sijago
       POSTGRES_USER: sijago_user
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_PASSWORD_file: /run/secrets/db_password
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -68,13 +68,13 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: "true"
-      APP_KEY: /run/secrets/app_key
+      #APP_KEY: /run/secrets/app_key
       DB_CONNECTION: pgsql
       DB_HOST: db
       DB_PORT: 5432
       DB_DATABASE: sijago
       DB_USERNAME: sijago_user
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD_FILE: /run/secrets/db_password
       CACHE_DRIVER: redis
       REDIS_HOST: redis
       PROMETHEUS_URL: http://prometheus:9090

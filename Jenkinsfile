@@ -51,7 +51,7 @@ pipeline {
                       docker run --rm \
                         -e APP_KEY=$(cat .appkey) \
                         $IMAGE_TAG \
-                        php artisan test --env=testing || true
+                        php artisan test --env=testing --parallel || true
                     '''
                 }
             }

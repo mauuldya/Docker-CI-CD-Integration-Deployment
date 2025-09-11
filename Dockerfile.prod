@@ -1,6 +1,6 @@
 FROM php:8.2-cli
 
-# Buat non-root user
+# Buat user non-root
 ARG USER=appuser
 ARG UID=1000
 RUN useradd -u $UID -m $USER
@@ -21,23 +21,22 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copy semua kecuali .env
+# Copy project (kecuali .env)
 COPY . .
 RUN rm -f .env
 
-# Change owner to non-root user
+# Permission ke non-root
 RUN chown -R $USER:$USER /var/www
 
-# Switch to non-root user
 USER $USER
 
-# Install Laravel dependencies
+# Install dependencies Laravel
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
+# Copy entrypoint
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 8000
 
-# Gunakan entrypoint untuk jalankan Laravel
 ENTRYPOINT ["bash", "/usr/local/bin/docker-entrypoint.sh"]
