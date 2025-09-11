@@ -21,7 +21,7 @@ services:
     environment:
       POSTGRES_DB: sijago
       POSTGRES_USER: sijago_user
-      POSTGRES_PASSWORD_file: /run/secrets/db_password
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
