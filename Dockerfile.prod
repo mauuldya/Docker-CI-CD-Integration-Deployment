@@ -1,11 +1,9 @@
 FROM php:8.2-cli
 
-# Buat user non-root
 ARG USER=appuser
 ARG UID=1000
 RUN useradd -u $UID -m $USER
 
-# Install dependencies & PostgreSQL driver
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     postgresql-client \
@@ -16,27 +14,21 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_pgsql pgsql zip intl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copy project (kecuali .env)
 COPY . .
 RUN rm -f .env
 
-# Permission ke non-root
 RUN chown -R $USER:$USER /var/www
+
+# ✅ Copy entrypoint dengan permission eksekusi langsung
+COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 USER $USER
 
-# Install dependencies Laravel
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Copy entrypoint
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 EXPOSE 8000
-
 ENTRYPOINT ["bash", "/usr/local/bin/docker-entrypoint.sh"]
