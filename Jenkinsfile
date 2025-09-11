@@ -47,7 +47,6 @@ pipeline {
                       if [ ! -f .appkey ]; then
                         php artisan key:generate --show > .appkey
                       fi
-                      docker secret rm app_key || true
                         cat .appkey | docker secret create app_key -
                         $IMAGE_TAG php artisan test --env=testing || true
                     '''
