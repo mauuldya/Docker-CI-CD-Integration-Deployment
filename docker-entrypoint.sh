@@ -10,4 +10,4 @@ php artisan config:clear
 php artisan cache:clear
 
 # Jalankan Laravel
-php artisan serve --host=0.0.0.0 --port=8000
+exec artisan serve --host=0.0.0.0 --port=8000
