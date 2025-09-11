@@ -1,8 +1,8 @@
 version: "3.9"
 
 secrets:
-  db_password:
-    file: ./secrets/db_password.txt
+  #db_password:
+    #file: ./secrets/db_password.txt
   app_key:
     external: true 
 
@@ -21,7 +21,8 @@ services:
     environment:
       POSTGRES_DB: sijago
       POSTGRES_USER: sijago_user
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      #POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_PASSWORD: secret
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -74,7 +75,8 @@ services:
       DB_PORT: 5432
       DB_DATABASE: sijago
       DB_USERNAME: sijago_user
-      DB_PASSWORD_FILE: /run/secrets/db_password
+      #DB_PASSWORD_FILE: /run/secrets/db_password
+      DB_PASSWORD: secret
       CACHE_DRIVER: redis
       REDIS_HOST: redis
       PROMETHEUS_URL: http://prometheus:9090

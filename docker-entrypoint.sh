@@ -2,9 +2,9 @@
 set -e
 
 # Ambil secrets dari Swarm (kalau ada)
-if [ -f /run/secrets/db_password ]; then
-  export DB_PASSWORD=$(cat /run/secrets/db_password)
-fi
+#if [ -f /run/secrets/db_password ]; then
+  #export DB_PASSWORD=$(cat /run/secrets/db_password)
+#fi
 
 if [ -f /run/secrets/app_key ]; then
   export APP_KEY=$(cat /run/secrets/app_key)
