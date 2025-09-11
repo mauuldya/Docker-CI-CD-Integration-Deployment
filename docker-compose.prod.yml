@@ -30,8 +30,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    secrets:
-      - db_password
+    #secrets:
+      #- db_password
     networks:
       - sijago_net
     deploy:
@@ -83,7 +83,7 @@ services:
       CADVISOR_URL: http://cadvisor:8080
       GRAFANA_URL: http://grafana:3000
     secrets:
-      - db_password
+      #- db_password
       - app_key
     networks:
       - sijago_net
