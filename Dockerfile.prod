@@ -23,7 +23,7 @@ RUN rm -f .env
 
 RUN chown -R $USER:$USER /var/www
 
-# ✅ Copy entrypoint dengan permission eksekusi langsung
+# ✅ Copy entrypoint langsung executable
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 USER $USER
