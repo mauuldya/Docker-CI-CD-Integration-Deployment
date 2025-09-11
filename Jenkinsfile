@@ -23,35 +23,32 @@ pipeline {
             when { branch 'dev' }
             steps {
                 script {
+                    // build image pakai Dockerfile.prod
                     docker.build(
-                        "${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}",
-                        "-f Dockerfile.prod ."
+                    "${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}",
+                    "-f Dockerfile.prod ."
                     )
 
+                    // set environment variable
                     env.IMAGE_TAG = "${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
                     env.IMAGE_LATEST = "${REGISTRY}/${IMAGE_NAME}:latest"
 
+                    // simpan deskripsi build
                     currentBuild.description = env.IMAGE_TAG
                 }
             }
         }
-
+        
         stage('Run Tests and Generate App Key Secret') {
             when { branch 'dev' }
             steps {
                 script {
                     sh '''
-                      # Generate app key sekali saja
                       if [ ! -f .appkey ]; then
                         php artisan key:generate --show > .appkey
-                        docker secret create app_key .appkey || true
                       fi
-
-                      # Jalankan test pakai image hasil build
-                      docker run --rm \
-                        -e APP_KEY=$(cat .appkey) \
-                        $IMAGE_TAG \
-                        php artisan test --env=testing --parallel || true
+                        cat .appkey | docker secret create app_key -
+                        $IMAGE_TAG php artisan test --env=testing || true
                     '''
                 }
             }
@@ -65,12 +62,10 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
-                      echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                      docker push $IMAGE_TAG
-                      docker tag $IMAGE_TAG $IMAGE_LATEST
-                      docker push $IMAGE_LATEST
-                    '''
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+                    sh 'docker push $IMAGE_TAG'
+                    sh 'docker tag $IMAGE_TAG $IMAGE_LATEST'
+                    sh 'docker push $IMAGE_LATEST'
                 }
             }
         }
