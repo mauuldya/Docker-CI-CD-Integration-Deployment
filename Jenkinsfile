@@ -76,8 +76,8 @@ pipeline {
             steps {
                 dir ("${WORKSPACE}") {
                     sh '''
-                      docker stack deploy -c docker-compose.prod.yml sijago_stack_staging
-                      docker stack services sijago_stack_staging
+                      docker stack deploy -c docker-compose.prod.yml sijago_stack_prod
+                      docker stack services sijago_stack_prod
                     '''
                 }
             }
