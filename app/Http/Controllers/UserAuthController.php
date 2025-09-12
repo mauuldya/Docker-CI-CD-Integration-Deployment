@@ -32,7 +32,7 @@ class UserAuthController extends Controller
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password salah.',
+            'email' => 'Email atau password SALAH BANGET HAHAHAHAHAHAHHA.',
         ])->withInput($request->only('email'));
     }
 
