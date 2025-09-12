@@ -20,7 +20,7 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            when { branch 'dev' }
+            when { branch 'staging' }
             steps {
                 script {
                     // build image pakai Dockerfile.prod
@@ -40,7 +40,7 @@ pipeline {
         }
         
         stage('Run Tests and Generate App Key Secret') {
-            when { branch 'dev' }
+            when { branch 'staging' }
             steps {
                 script {
                     sh '''
@@ -56,7 +56,7 @@ pipeline {
         }
 
         stage('Push to DockerHub') {
-            when { branch 'dev' }
+            when { branch 'staging' }
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
@@ -72,7 +72,7 @@ pipeline {
         }
 
         stage('Deploy to Staging') {
-            when { branch 'dev' }
+            when { branch 'staging' }
             steps {
                 dir ("${WORKSPACE}") {
                     sh '''
